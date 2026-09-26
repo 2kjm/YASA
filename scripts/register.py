@@ -4,6 +4,7 @@ Run: uv run --env-file .env scripts/register.py        (register)
 import json
 import os
 import pathlib
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -25,8 +26,8 @@ def call(method, path, body=None):
 
 
 def resolve(value):
-    # "$VAR" -> env var, "@path" -> file contents (relative to repo root) when that file exists, so tool selectors
-    # like "@read-only" pass through
+    # "$VAR" -> env var, "@path" -> file contents (relative to repo root, "${VAR}" inside filled from env) when that
+    # file exists, so tool selectors like "@read-only" pass through
     if isinstance(value, dict):
         return {k: resolve(v) for k, v in value.items()}
     if isinstance(value, list):
@@ -34,7 +35,7 @@ def resolve(value):
     if isinstance(value, str) and value.startswith("$"):
         return os.environ[value[1:]]
     if isinstance(value, str) and value.startswith("@") and (ROOT / value[1:]).is_file():
-        return (ROOT / value[1:]).read_text()
+        return re.sub(r"\$\{(\w+)\}", lambda m: os.environ[m[1]], (ROOT / value[1:]).read_text())
     return value
 
 

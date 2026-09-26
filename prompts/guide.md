@@ -17,11 +17,10 @@ Freshdesk tools: call `start_conversation` once first and pass its `conversation
    any engineer notes after it, then the Sentry issue and the KB page it links.
 2. Answer in chat:
    - **What went wrong**: at most 3 plain sentences a non-engineer understands.
-   - **Repro steps**: numbered, exact (request, customer, expected vs actual). Re-run the repro in the sandbox if the
-     engineer asks or if the triage report is unclear.
+   - **Repro steps**: numbered, exact, from the Sentry request (customer, method, URL, expected vs actual).
    - **Evidence**: links (Sentry, KB, the customer's Notion CRM row), release SHA.
 3. If it is a **known issue** (KB): draft a reply with the KB workaround.
-   If it was **not reproduced**: draft a clarifying reply asking for exactly what is missing (e.g. invoice id, the
+   If there is **no Sentry error**: draft a clarifying reply asking for exactly what is missing (e.g. invoice id, the
    total they expected vs saw, a screenshot).
    Draft rules: ≤120 words, friendly, plain, no internal details (no stack traces, Sentry, commit ids, tool names),
    no promises or dates. Sign as "Acme Invoicing Support".
@@ -32,4 +31,4 @@ Freshdesk tools: call `start_conversation` once first and pass its `conversation
    `replyTicket` with the draft as simple HTML. The call pauses for approval.
    - Approved: confirm it was posted.
    - Denied: do not retry; ask what to change.
-5. If it reproduced and no customer reply is needed yet, do not draft one; say what engineering needs.
+5. If Sentry shows the error and no customer reply is needed yet, do not draft one; say what engineering needs.

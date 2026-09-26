@@ -1,6 +1,6 @@
 {
   "name": "support-triage",
-  "description": "Sweeps the Freshdesk queue every 30 minutes: legitimacy, KB, Sentry, sandbox repro, private-note handover.",
+  "description": "Sweeps the Freshdesk queue every 30 minutes: CRM legitimacy, KB, Sentry, private note, reply that waits for approval.",
   "manifest": {
     "model": {
       "name": "$TRIAGE_MODEL",
@@ -19,9 +19,12 @@
           "fetchTicket",
           "fetchTicketConversations",
           "createTicketNote",
-          "updateTicket"
+          "updateTicket",
+          "replyTicket"
         ],
-        "require_approval_for_tools": []
+        "require_approval_for_tools": [
+          "replyTicket"
+        ]
       },
       {
         "name": "sentry",
@@ -43,7 +46,7 @@
     ],
     "config": {
       "sandbox": {
-        "enabled": true
+        "enabled": false
       },
       "dynamic_sub_agents": {
         "enabled": true

@@ -43,7 +43,7 @@
     ],
     "config": {
       "sandbox": {
-        "enabled": true
+        "enabled": false
       },
       "ask_user_questions": {
         "enabled": true
