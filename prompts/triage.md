@@ -38,14 +38,16 @@ Put independent calls in the same step (for example every `fetchTicket` at once)
    ticket: issue title and link, exception, request (method, URL), release. Fetch more detail only if needed.
 5. **Knowledge base**, only for legit tickets with no Sentry error: one `notion-search` each for the symptom. A page
    under "Knowledge base" that matches is a known issue: note its link and workaround.
-6. **Decide each ticket (no tool calls):**
-   - `suspicious` / `spam`: flag it. Never reply.
-   - Duplicate: no reply here; point to the original ticket.
-   - Enough information: draft the customer reply. Sentry error → acknowledge the problem and say the team is
-     looking into it. Known issue → give the workaround.
-   - **Not enough information to act** (an attachment you cannot open; the request does not name the invoice or say
-     what exactly is wrong, and no Sentry error explains it (a KB page on a related topic does not count); anything else you would have to guess): prepare a question
-     for the engineer instead of a draft.
+6. **Decide each ticket (no tool calls)**: take the first rule that fits.
+   1. `suspicious` / `spam`: flag it. Never reply.
+   2. Duplicate: no reply here; point to the original ticket.
+   3. The request relies on an attachment you cannot open: **question**.
+   4. A Sentry error for this requester matches the complaint: draft a reply that acknowledges the problem and says
+      the team is looking into it.
+   5. A KB page describes the same symptom the customer reports (e.g. invoices landing in junk): draft a reply
+      with its workaround.
+   6. Anything else is **missing information: question, never a draft**. A vague complaint (e.g. "the totals look
+      wrong") with no Sentry error lands here; a KB page that explains how something works does not answer it.
    Draft rules: ≤120 words, friendly, plain, no internal details (no stack traces, Sentry, commit ids, tool names,
    AI), no promises or dates. Sign as "Acme Invoicing Support".
 7. **Write the notes and tags**, all tickets in one step: `createTicketNote` (private, notify) with the body below,
@@ -60,7 +62,7 @@ Put independent calls in the same step (for example every `fetchTicket` at once)
    <b>Next:</b> <"Draft reply waiting for approval in TrueForge; it will email <requester and existing CCs>:" + <blockquote>draft</blockquote>,
                 or "Question for you in TrueForge: <question>", or "No reply: <reason>">
    ```
-8. **Pauses, one ticket at a time.**
+8. **Pauses, one ticket at a time, only after every note and tag from step 7 is written.**
    - Question: `ask_user_question` naming the ticket (#id, subject, customer), what you found, what is missing and
      why. For the preview, link the ticket page `https://${FRESHDESK_DOMAIN}/a/tickets/<id>` and name each
      attachment and its size. Never show `attachment_url`: it is a signed link that expires in 5 minutes. Give 2–3 options, each a concrete next step, recommended first, e.g.
