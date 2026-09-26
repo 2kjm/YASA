@@ -1,0 +1,4 @@
+fastapi
+sentry-sdk[fastapi]
+uvicorn
+httpx
