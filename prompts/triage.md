@@ -62,11 +62,12 @@ E. **Attachments.** If the ticket has attachments, try to download them **in the
 F. **Reproduce in the sandbox** (only if D found an error). Write and run code in the sandbox:
    ```
    mkdir yasa && curl -sL https://codeload.github.com/2kjm/YASA/tar.gz/<release SHA from Sentry> | tar xz -C yasa --strip-components 1
-   cd yasa && pip install -r product/requirements.txt
+   cd yasa && python3 -m venv .venv && . .venv/bin/activate
+   pip install -q --use-deprecated=legacy-certs -r product/requirements.txt
    ```
    Then write a short Python script that uses `fastapi.testclient.TestClient(app, raise_server_exceptions=False)`
    with `app` from `product/app.py` (run it from `product/`) to replay the failing request from Sentry (same method,
-   path and `x-user-email` header). Print the status code and the exception. (No `git` in the sandbox; the tarball is the release.) If the download or install fails, write a
+   path and `x-user-email` header). Print the status code and the exception. (The sandbox has no `git` and no keychain access: hence the tarball and `legacy-certs`.) If the download or install fails, write a
    minimal script from the Sentry stack frames instead and say so. Record: reproduced yes/no, the command, and the
    trimmed output.
    If D found no error, do not guess: reproduced = no, "no matching error in Sentry".

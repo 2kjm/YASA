@@ -186,7 +186,7 @@ Cut order if late: ticket 5 → ticket 4 → second schedule. Never cut the sand
 
 1. Notion MCP finds the **Customers** row by email and the KB pages on a free workspace (step 5).
 2. Sentry `search_events` finds the event by `user.email` in the EU-region org (step 5). OAuth connected ✅.
-3. Sandbox `git clone` + `pip install` work on this NAT64 network (step 2). Fallback: repro from the stack trace.
+3. ~~Sandbox download + install~~ verified (tarball + venv + legacy-certs).
 4. Freshdesk trial MCP allowance lasts the day (Growth plan lists 1,200 actions/year). Keep schedules paused
    between test runs if calls get tight.
 5. Can the sandbox download a Freshdesk attachment (sandbox network is github/pypi only)? If not, ticket 4 still
@@ -214,6 +214,9 @@ Cut order if late: ticket 5 → ticket 4 → second schedule. Never cut the sand
   `prompts/triage.md` has the root copy the "Per-ticket procedure" verbatim into each `create_sub_agent` input.
 - **No `git` in the local sandbox on macOS**: `/usr/bin/git` is an xcode-select shim that the sandbox blocks. The repro
   downloads `https://codeload.github.com/2kjm/YASA/tar.gz/<sha>` with curl instead (allowed host).
+- **pip in the local sandbox** fails TLS via the macOS keychain (`OSStatus -26276`); `pip install
+  --use-deprecated=legacy-certs` in a venv works. Whole chain verified in a TrueForge session: tarball → venv → pip →
+  `product/check.py` → `ok`.
 - Notion's `notion-search` asks for `notion-get-tool-access` first; it's in the allowlist. `title_only` search
   filters need a Business plan (ignored on free).
 - Product runs on **:8765** (a Docker container holds :8000 on the build laptop).
