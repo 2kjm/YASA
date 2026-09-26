@@ -12,8 +12,8 @@ Facts marked **(unverified)** must be checked at the step that uses them.
 - Code must be written today. Public repo, working README, **no keys in repo or video**, disclose AI assistants.
 - Repo: `~/Documents/projects/support-agent` → public `https://github.com/2kjm/YASA` (public from the start: the
   sandbox clones it).
-- Demo inbox: plus-addresses of `karun@mittailabs.com` (`+cafemocha`, `+spam`, `+totals`, `+attach`, `+known`),
-  added as Gmail "Send mail as" aliases so tickets can be sent from them.
+- Demo inbox: plus-addresses of `karun@mittailabs.com` (`+cafemocha`, `+spam`, `+totals`, `+attach`, `+known`).
+  `scripts/send_tickets.py` creates the tickets as those requesters; Freshdesk's acks and approved replies land there.
 - TrueForge 0.2.1 standalone at `http://localhost:8790`, started with **`scripts/start-trueforge.sh`** (see §14 for
   why a plain `npx @truefoundry/trueforge@latest` is not enough). No local auth. Data: sqlite under
   `~/Library/Application Support/trueforge`.
@@ -211,7 +211,7 @@ Cut order if late: ticket 5 → ticket 4 → second schedule. Never cut the sand
   (macOS Seatbelt / Linux bubblewrap): reads/writes only its own folder, network only github.com + pypi.org.
 - **SSRF guard**: TrueForge blocks MCP hosts without a dot (`localhost`) and hosts resolving to private ranges,
   including NAT64 `64:ff9b::/96`. This network returns NAT64 addresses for Freshdesk (and github.com). Fix:
-  `OUTBOUND_URL_ALLOWED_HOSTS='["localhost","<subdomain>.freshdesk.com"]'`, set by `scripts/start-trueforge.sh`,
+  `OUTBOUND_URL_ALLOWED_HOSTS='["<subdomain>.freshdesk.com"]'`, set by `scripts/start-trueforge.sh`,
   which reads only `FRESHDESK_DOMAIN` from `.env` (the sandbox may inherit TrueForge's environment).
 - **Subagents** share the parent's tools and sandbox but **not its instructions** (`AgentThread.mjs`), so
   `prompts/triage.md` has the root copy the "Per-ticket procedure" verbatim into each `create_sub_agent` input.
