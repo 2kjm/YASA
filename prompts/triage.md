@@ -24,7 +24,7 @@ Put independent calls in the same step (for example every `fetchTicket` at once)
 1. **Queue.** `fetchSearchTickets` with query `(status:2 OR status:3)` (read every page). New tickets are those with
    none of the tags `ai-triaged`, `ai-suspicious`, `ai-waiting-human`. If none, say so and stop.
    The results already hold each ticket's requester email and CCs. A new ticket whose requester has another,
-   lower-numbered open ticket is a **possible duplicate** of it. No `fetchTickets` calls.
+   lower-numbered open ticket is a **possible duplicate** of it.
 2. **Read.** `fetchTicket` for every new ticket, in one step: description and attachments. Search results can be
    minutes stale, so trust `fetchTicket`: drop any ticket that is `deleted` or `spam`, is no longer status 2 or 3, or
    already has an `ai-*` tag.
@@ -65,7 +65,8 @@ Put independent calls in the same step (for example every `fetchTicket` at once)
      why. For the preview, link the ticket page `https://${FRESHDESK_DOMAIN}/a/tickets/<id>` and name each
      attachment and its size. Never show `attachment_url`: it is a signed link that expires in 5 minutes. Give 2–3 options, each a concrete next step, recommended first, e.g.
      `["Ask the customer for <what is missing> (I'll draft a reply for your approval) (Recommended)", "I'll handle it myself"]`.
-     The engineer's answer (an option or typed text) is trusted: follow it within the hard rules. If it leads to a
-     reply, draft it, call `replyTicket`, then add tag `ai-triaged`.
+     When `ask_user_question` returns, that is the engineer's answer (an option or typed text): act on it now, don't
+     ask again or say you are waiting. It is trusted within the hard rules. If it leads to a reply, draft it, call
+     `replyTicket`, then add tag `ai-triaged`.
    - Draft ready: `replyTicket` with the draft as simple HTML. It pauses for approval. If denied, do not retry.
 9. **Summary**: a table of ticket, verdict, Sentry error, note, tag, reply (approved / denied / none), question asked.
