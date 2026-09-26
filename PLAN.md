@@ -107,12 +107,12 @@ Custom MCP servers (freshdesk, slack) are registered by `scripts/register.py`; c
 
 | Action | Who can | Gate | Why |
 |---|---|---|---|
-| Read Freshdesk, Sentry, Notion (CRM + KB) | both agents | none | read-only (`@read-only`) |
+| Read Freshdesk, Sentry, Notion (CRM + KB) | both agents | none | only named read tools (§7) |
 | Post to `#support-help` | agent 1 | none; the Slack server only allows that one channel | internal only |
 | Tag a ticket (`updateTicket` with tags) | agent 1 | none | tags are internal. Backstop: Freshdesk's requester notifications for "resolved"/"closed" are **off**, so even a wrong status change emails nobody |
 | **Reply on a ticket** (`replyTicket`) | agent 2 only | **approval every time** | it is an email to the customer; the card shows body, cc, bcc |
 | **Change a ticket** (`updateTicket`) | agent 2 only | **approval every time** | status/requester changes |
-| Notes, create tickets/contacts/agents, KB edits, Sentry/Notion writes | nobody | not exposed | read-only allowlists |
+| Notes, create tickets/contacts/agents, Notion edits, Sentry `update_issue`/Seer, refunds | nobody | not exposed | not in any allowlist |
 | Anything triggered by ticket text | nobody | — | ticket body and attachments are untrusted data; agent 1 has no tool that reaches a customer |
 
 ## 7. Agents and prompts
@@ -120,10 +120,14 @@ Custom MCP servers (freshdesk, slack) are registered by `scripts/register.py`; c
 Source of truth: `agents/support-triage.json`, `agents/support-guide.json`, `prompts/triage.md`, `prompts/guide.md`.
 `register.py` fills `$VAR` (from `.env`) and `@file` in the specs.
 
-- support-triage: freshdesk `@read-only` + `start_conversation` + `updateTicket` (no approvals); sentry and notion
-  `@read-only`; slack post/history/replies; sandbox and dynamic subagents on; ask-user off.
-- support-guide: freshdesk `@read-only` + `start_conversation` + `replyTicket` + `updateTicket`, the last two
-  **require approval**; sentry, notion `@read-only`; slack read; sandbox on.
+- support-triage: freshdesk `start_conversation, fetchSearchTickets, fetchTicket, fetchTicketConversations,
+  updateTicket` (no approvals); notion `notion-search, notion-fetch, notion-query-data-sources`; sentry `@read-only`
+  (6 tools; excludes `update_issue`, `analyze_issue_with_seer`, `execute_sentry_tool`); slack post/history/replies;
+  sandbox and dynamic subagents on; ask-user off.
+- support-guide: same reads + freshdesk `replyTicket`, `updateTicket`, both **require approval**; slack read; sandbox on.
+- Explicit tool names instead of `@read-only` for Freshdesk (22 read tools) and Notion (27, mostly AI/session tools):
+  fewer tools, fewer wrong picks, exact Where-it-stops table. Verified live 2026-09-26: notion 45 tools, sentry 9,
+  freshdesk 40.
 - Freshdesk MCP quirks (verified): call `start_conversation` first and pass its `conversation_id` to every call;
   some fetch tools say "wait for user confirmation" (agent 1 is told to ignore that); search has no `NOT`, so agent 1
   searches `(status:2 OR status:3)` and skips `ai-*` tags; `updateTicket` `tags` replaces the list.
@@ -179,8 +183,8 @@ Cut order if late: ticket 5 → ticket 4 → second schedule. Never cut the sand
 
 ## 12. Still unverified (check at the step named)
 
-1. Notion MCP finds the **Customers** row by email and the KB pages on a free workspace (step 2).
-2. Sentry MCP works with an EU-region org (step 2).
+1. Notion MCP finds the **Customers** row by email and the KB pages on a free workspace (step 5).
+2. Sentry `search_events` finds the event by `user.email` in the EU-region org (step 5). OAuth connected ✅.
 3. Sandbox `git clone` + `pip install` work on this NAT64 network (step 2). Fallback: repro from the stack trace.
 4. Freshdesk trial MCP allowance lasts the day (Growth plan lists 1,200 actions/year). Keep schedules paused
    between test runs if calls get tight.

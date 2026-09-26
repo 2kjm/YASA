@@ -13,8 +13,10 @@
       {
         "name": "freshdesk",
         "enable_tools": [
-          "@read-only",
           "start_conversation",
+          "fetchSearchTickets",
+          "fetchTicket",
+          "fetchTicketConversations",
           "replyTicket",
           "updateTicket"
         ],
@@ -32,7 +34,9 @@
       {
         "name": "notion",
         "enable_tools": [
-          "@read-only"
+          "notion-search",
+          "notion-fetch",
+          "notion-query-data-sources"
         ]
       },
       {
