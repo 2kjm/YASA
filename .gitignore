@@ -1,0 +1,8 @@
+.env
+*.sqlite
+*.sqlite-*
+*.db
+.trueforge/
+__pycache__/
+.venv/
+*.zip
