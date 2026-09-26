@@ -1,19 +1,58 @@
 {
   "name": "support-triage",
-  "description": "Sweeps the SUP queue every 30 minutes: legitimacy, KB, Sentry, sandbox repro, Slack handover.",
+  "description": "Sweeps the Freshdesk queue every 30 minutes: legitimacy, KB, Sentry, sandbox repro, Slack handover.",
   "manifest": {
-    "model": { "name": "$TRIAGE_MODEL", "params": { "temperature": 0.1 } },
+    "model": {
+      "name": "$TRIAGE_MODEL",
+      "params": {
+        "temperature": 0.1
+      }
+    },
     "instructions": "@prompts/triage.md",
     "mcp_servers": [
-      { "name": "jira", "enable_tools": ["@read-only", "editJiraIssue"], "require_approval_for_tools": [] },
-      { "name": "sentry", "enable_tools": ["@read-only"], "require_approval_for_tools": [] },
-      { "name": "notion", "enable_tools": ["@read-only"], "require_approval_for_tools": [] },
-      { "name": "slack", "enable_tools": ["conversations_add_message", "conversations_replies", "conversations_history"], "require_approval_for_tools": [] }
+      {
+        "name": "freshdesk",
+        "enable_tools": [
+          "@read-only",
+          "start_conversation",
+          "updateTicket"
+        ],
+        "require_approval_for_tools": []
+      },
+      {
+        "name": "sentry",
+        "enable_tools": [
+          "@read-only"
+        ],
+        "require_approval_for_tools": []
+      },
+      {
+        "name": "notion",
+        "enable_tools": [
+          "@read-only"
+        ],
+        "require_approval_for_tools": []
+      },
+      {
+        "name": "slack",
+        "enable_tools": [
+          "conversations_add_message",
+          "conversations_replies",
+          "conversations_history"
+        ],
+        "require_approval_for_tools": []
+      }
     ],
     "config": {
-      "sandbox": { "enabled": true },
-      "dynamic_sub_agents": { "enabled": true },
-      "ask_user_questions": { "enabled": false },
+      "sandbox": {
+        "enabled": true
+      },
+      "dynamic_sub_agents": {
+        "enabled": true
+      },
+      "ask_user_questions": {
+        "enabled": false
+      },
       "iteration_limit": 150
     }
   }

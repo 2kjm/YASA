@@ -1,6 +1,6 @@
 # Demo tickets
 
-Send each as an email **to the JSM support address**, **from** the plus-address shown (`<you>` = `DEMO_EMAIL_BASE`
+Send each as an email **to the Freshdesk support address** (`support@<your-subdomain>.freshdesk.com`), **from** the plus-address shown (`<you>` = `DEMO_EMAIL_BASE`
 user part). Send them after `scripts/traffic.py` has run, so Sentry already has the events.
 
 ---

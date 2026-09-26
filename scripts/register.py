@@ -1,4 +1,4 @@
-"""Create or update both agents and the two 30-minute schedules in TrueForge. Safe to re-run.
+"""Create or update the custom MCP servers (Freshdesk, Slack), both agents and the two 30-minute schedules. Safe to re-run.
 Run: uv run --env-file .env scripts/register.py        (register)
      uv run --env-file .env scripts/register.py run    (also trigger a triage sweep now)"""
 import json
@@ -37,6 +37,20 @@ def resolve(value):
     return value
 
 
+def upsert_mcp_servers():
+    # Catalog connectors (sentry, notion) use OAuth and are connected in the TrueForge UI.
+    servers = [
+        {"type": "remote", "name": "freshdesk", "url": f"https://{os.environ['FRESHDESK_DOMAIN']}/mcp",
+         "description": "Freshdesk support desk: tickets, requesters, replies, tags.",
+         "auth": {"type": "header", "headers": {"Authorization": os.environ["FRESHDESK_API_KEY"].strip()}}},
+        {"type": "remote", "name": "slack", "url": "http://localhost:13080/mcp",
+         "description": "Slack; posting is restricted to #support-help by the server's own config."},
+    ]
+    for manifest in servers:
+        call("PUT", "/settings/mcp-servers", {"manifest": manifest})
+        print("mcp server", manifest["name"], "saved")
+
+
 def upsert_agent(spec):
     existing = [a for a in call("GET", f"/agents?agent_name={spec['name']}")["data"] if a["name"] == spec["name"]]
     if existing:
@@ -59,6 +73,7 @@ def upsert_schedules():
 
 
 def main():
+    upsert_mcp_servers()
     for f in sorted((ROOT / "agents").glob("*.json")):
         upsert_agent(resolve(json.loads(f.read_text())))
     schedules = upsert_schedules()
