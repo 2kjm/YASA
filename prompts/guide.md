@@ -13,8 +13,8 @@ Freshdesk tools: call `start_conversation` once first and pass its `conversation
 
 ## For a ticket key
 
-1. Read the ticket, the support-triage message about it in Slack `#support-help` (starts with `*Ticket #<id>*`) and its
-   replies, the Sentry issue and the KB page it links.
+1. Read the ticket and its conversations, including support-triage's private note (starts with "YASA triage") and
+   any engineer notes after it, then the Sentry issue and the KB page it links.
 2. Answer in chat:
    - **What went wrong**: at most 3 plain sentences a non-engineer understands.
    - **Repro steps**: numbered, exact (request, customer, expected vs actual). Re-run the repro in the sandbox if the

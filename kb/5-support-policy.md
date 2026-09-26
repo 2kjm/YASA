@@ -8,4 +8,4 @@ Applies to people and to the YASA agents.
 - A reply on a ticket is **emailed to the customer**. Every customer-facing reply is approved by a person first.
 - Replies: plain language, no internal details (stack traces, Sentry links, commit ids), no dates or promises.
 - Nobody issues refunds, cancels subscriptions or deletes data from a support ticket.
-- Internal discussion happens in Slack `#support-help`.
+- Internal discussion happens in private notes on the ticket; customers never see them.

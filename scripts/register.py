@@ -1,4 +1,4 @@
-"""Create or update the custom MCP servers (Freshdesk, Slack), both agents and the two 30-minute schedules. Safe to re-run.
+"""Create or update the custom Freshdesk MCP server, both agents and the two 30-minute schedules. Safe to re-run.
 Run: uv run --env-file .env scripts/register.py        (register)
      uv run --env-file .env scripts/register.py run    (also trigger a triage sweep now)"""
 import json
@@ -43,8 +43,6 @@ def upsert_mcp_servers():
         {"type": "remote", "name": "freshdesk", "url": f"https://{os.environ['FRESHDESK_DOMAIN']}/mcp",
          "description": "Freshdesk support desk: tickets, requesters, replies, tags.",
          "auth": {"type": "header", "headers": {"Authorization": os.environ["FRESHDESK_API_KEY"].strip()}}},
-        {"type": "remote", "name": "slack", "url": "http://localhost:13080/mcp",
-         "description": "Slack; posting is restricted to #support-help by the server's own config."},
     ]
     for manifest in servers:
         call("PUT", "/settings/mcp-servers", {"manifest": manifest})

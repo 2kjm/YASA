@@ -39,13 +39,6 @@
           "notion-fetch",
           "notion-query-data-sources"
         ]
-      },
-      {
-        "name": "slack",
-        "enable_tools": [
-          "conversations_replies",
-          "conversations_history"
-        ]
       }
     ],
     "config": {
