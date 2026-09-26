@@ -40,14 +40,14 @@ execution**, and approval checkpoints". Submission line: *"Show us where the cod
 ```
 customer email ──► Freshdesk ticket (Freshdesk itself emails "we received it")
                          │
-every 30 min (two TrueForge schedules)  ──►  Agent 1  support-triage   (scheduled; pauses for people)
-   one subagent per ticket:
-   1. legitimacy: requester in the Notion CRM? Pro + Active? + prompt-injection check → suspicious: tag, note, stop
-   2. Notion knowledge base: known issue?
-   3. Sentry: errors for this customer's email, release, stack trace
-   4. needs an attachment → ⏸ QUESTION on the TrueForge screen (attachment link + options), tag ai-waiting-human
-   5. private note (emails the engineer): verdict, evidence, repro steps, duplicates, draft reply; tag ai-triaged
-   6. ⏸ APPROVAL: replyTicket (email to the customer) pauses the run in TrueForge until a person clicks Allow
+every 30 min (two TrueForge schedules)  ──►  Agent 1  support-triage   (one agent, the whole queue at once)
+   1. read the queue; duplicates = same requester (from the search results)
+   2. CRM: one Notion query for every sender → legit / suspicious (+ prompt-injection check)
+   3. Sentry: one search for every legit sender's email → exception, request, release
+   4. Notion knowledge base for the rest: known issue?
+   5. private note on each ticket (Freshdesk emails the engineer) + tag
+   6. ⏸ QUESTION when information is missing (attachment it can't open, vague request): options + preview link
+   7. ⏸ APPROVAL: replyTicket = email to the customer. The run waits in TrueForge until a person clicks Allow.
                          │
 human opens TrueForge chat ──► Agent 2  support-guide   (human present)
    (optional) explains a ticket, redrafts a denied reply → ⏸ APPROVAL again
@@ -59,9 +59,12 @@ human opens TrueForge chat ──► Agent 2  support-guide   (human present)
   TrueForge enforces ≥1 h per schedule (`SCHEDULE_MIN_INTERVAL_SECONDS = 3600`, verified). No webhooks; MCP can't push.
 - **The "we received it" ack is Freshdesk's own notification**, not the agent. The agent never emails a customer
   without approval, and scammers don't get an agent-written reply.
-- **Two saved agents.** Agent 1 uses dynamic subagents (`create_sub_agent`), one per ticket.
+- **Two saved agents. Agent 1 is one agent over the whole queue** (16:10 change). Per-ticket subagents cost 219 tool
+  calls for 6 tickets: 120 were tool-schema lookups repeated per subagent, plus per-ticket CRM/Sentry/Notion lookups;
+  and only the root agent may `ask_user_question`. Now: tools preloaded (`preload: true`), one CRM query and one
+  Sentry query for all senders, duplicates from the search results.
 - **Agent 1 pauses for people in TrueForge** (15:55 change): `replyTicket` needs approval, and attachment decisions
-  use `ask_user_question` (root agent only; subagents hand back `NEEDS DECISION`). Tickets are tagged before the
+  use `ask_user_question` whenever information is missing. Tickets are tagged before the
   pause, so the next scheduled run skips them instead of redrafting.
   Its only ways to reach a human are private ticket notes and tags.
 - **Human channel = private notes on the Freshdesk ticket.** An engineer answers a triage question with a private
@@ -128,7 +131,7 @@ Source of truth: `agents/support-triage.json`, `agents/support-guide.json`, `pro
 - support-triage: freshdesk `start_conversation, fetchSearchTickets, fetchTickets, fetchTicket,
   fetchTicketConversations, createTicketNote, updateTicket, replyTicket`; notion `notion-get-tool-access, notion-search, notion-fetch, notion-query-data-sources`; sentry `@read-only`
   (6 tools; excludes `update_issue`, `analyze_issue_with_seer`, `execute_sentry_tool`);
-  `replyTicket` **requires approval**; sandbox off; dynamic subagents on; ask-user **on** (root only).
+  `replyTicket` **requires approval**; sandbox off; subagents off; ask-user **on**; all MCP tools preloaded.
 - support-guide: same reads + freshdesk `replyTicket`, `updateTicket`, both **require approval**; sandbox off.
 - Explicit tool names instead of `@read-only` for Freshdesk (22 read tools) and Notion (27, mostly AI/session tools):
   fewer tools, fewer wrong picks, exact Where-it-stops table. Verified live 2026-09-26: notion 45 tools, sentry 9,
@@ -196,7 +199,7 @@ Cut order if late: ticket 5 → ticket 4 → second schedule. Never cut the appr
    between test runs if calls get tight.
 5. ~~Sandbox downloads a Freshdesk attachment~~ no: TrueForge hardcodes the local sandbox's hosts
    (`LOCAL_SANDBOX_ALLOWED_DOMAINS`, GitHub + PyPI), S3 gets a 403. The zip ticket ends in `ai-waiting-human`.
-7. An approval (`replyTicket`) inside a dynamic subagent of a scheduled run pauses and resumes from the UI (step 4).
+7. ~~Approval inside a scheduled run~~ verified 16:03: `tool.approval_required` for #15's reply.
 8. Freshdesk sends the `notify_emails` email when the note's author is that same agent (API key owner) (step 4).
 6. ~~Two schedules on one agent~~ verified: the `:30` one fired on its own at 15:30.
    One sweep of 6 tickets: ~5 min, 36 Freshdesk + 39 Notion + 18 Sentry tool calls, 36 sandbox runs.

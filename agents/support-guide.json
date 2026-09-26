@@ -23,13 +23,15 @@
         "require_approval_for_tools": [
           "replyTicket",
           "updateTicket"
-        ]
+        ],
+        "preload": true
       },
       {
         "name": "sentry",
         "enable_tools": [
           "@read-only"
-        ]
+        ],
+        "preload": true
       },
       {
         "name": "notion",
@@ -38,7 +40,8 @@
           "notion-search",
           "notion-fetch",
           "notion-query-data-sources"
-        ]
+        ],
+        "preload": true
       }
     ],
     "config": {

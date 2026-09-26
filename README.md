@@ -10,13 +10,14 @@ TrueFoundry × Polaris "Agents That Act" hackathon, 2026-09-26.
 ```
 customer email ──► Freshdesk ticket (Freshdesk itself emails "we received it")
                          │
-every 30 min (two TrueForge schedules) ──► support-triage   (one subagent per ticket)
-   1. legitimacy: requester in the Notion CRM, Pro + Active? prompt injection? → suspicious: tag, note, stop
-   2. Notion knowledge base: known issue?
-   3. Sentry: errors for this customer's email → exception, request, release, stack trace
-      needs an attachment? → ⏸ QUESTION in TrueForge: attachment link + "ask the customer" / "I'll handle it"
-   4. private note (Freshdesk emails the engineer): verdict, evidence, repro steps, duplicates, draft reply; tag ai-triaged
-   5. ⏸ APPROVAL: replyTicket = email to the customer. The run pauses in TrueForge until a person clicks Allow.
+every 30 min (two TrueForge schedules) ──► support-triage   (one agent, the whole queue at once)
+   1. read the queue; duplicates = same requester (from the search results)
+   2. CRM: one Notion query for every sender → legit / suspicious (+ prompt-injection check)
+   3. Sentry: one search for every legit sender's email → exception, request, release
+   4. Notion knowledge base for the rest: known issue?
+   5. private note on each ticket (Freshdesk emails the engineer) + tag
+   6. ⏸ QUESTION when information is missing (attachment it can't open, vague request): options + preview link
+   7. ⏸ APPROVAL: replyTicket = email to the customer. The run waits in TrueForge until a person clicks Allow.
                          │
 engineer opens TrueForge chat ──► support-guide   (optional, human present)
    explains a ticket, redrafts a denied reply → ⏸ APPROVAL again
@@ -32,7 +33,7 @@ engineer opens TrueForge chat ──► support-guide   (optional, human present
 | **Reply on a ticket** (`replyTicket`) | both agents | **approval every time** | it is an email to the customer. The approval card shows only the tool arguments, so the agent lists **every recipient** (requester and existing CCs) first: in its note (triage) or in chat (guide) |
 | **Change a ticket** (`updateTicket`) | support-guide only | **approval every time** | status and requester changes |
 | Create tickets, contacts or agents; edit Notion; Sentry `update_issue`/Seer; refunds | nobody | not exposed | not in any tool allowlist |
-| A decision it can't make (an attachment it can't open) | the person | **asked on the TrueForge screen** (`ask_user_question`, preview link + options) | only the main agent can ask (TrueForge rule), so per-ticket subagents hand the question back |
+| Act without the information it needs (attachment it can't open, vague request) | nobody | **asked on the TrueForge screen** (`ask_user_question`: what it found, options, preview link) | it never guesses; the engineer's answer decides the next step |
 | Anything a ticket asks for | nobody | — | ticket text and attachments are untrusted data; the only tool that reaches a customer pauses for a person |
 
 support-triage runs on a schedule. It tags each ticket before drafting the reply, so while one run waits for your
@@ -68,9 +69,9 @@ You need Node 20+ (for `npx`), [uv](https://docs.astral.sh/uv/), macOS or Linux,
    has no Sentry error, a password-protected zip, and a known issue.
 6. **Register the agents and run a sweep:** `uv run --env-file .env scripts/register.py run`. This creates the
    Freshdesk MCP server, both agents and the two schedules (`:00` and `:30`, because TrueForge allows at most one run
-   an hour per schedule), then starts a sweep. Watch it in TrueForge → Sessions: the CRM lookup, Sentry, one subagent
-   per ticket. Each ticket gets a private note (Freshdesk emails `SUPPORT_ENGINEER_EMAIL`) and an `ai-*` tag, then the
-   run **pauses on each customer reply**. Deny one and check that nothing is sent; Allow another and it arrives in
+   an hour per schedule), then starts a sweep. Watch it in TrueForge → Sessions: the CRM lookup, Sentry and
+   the knowledge base, each done once for the whole queue. Each ticket gets a private note (Freshdesk emails `SUPPORT_ENGINEER_EMAIL`) and an `ai-*` tag, then the
+   run **asks you** where it lacks information and **pauses on each customer reply**. Deny one and check that nothing is sent; Allow another and it arrives in
    your inbox.
 7. **Optional:** start a chat with **support-guide** and give it a ticket number. It explains the ticket and can
    redraft a denied reply, which pauses for approval again.
