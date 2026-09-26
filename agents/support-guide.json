@@ -5,7 +5,7 @@
     "model": {
       "name": "$GUIDE_MODEL",
       "params": {
-        "temperature": 0.2
+        "reasoning_effort": "medium"
       }
     },
     "instructions": "@prompts/guide.md",
@@ -34,6 +34,7 @@
       {
         "name": "notion",
         "enable_tools": [
+          "notion-get-tool-access",
           "notion-search",
           "notion-fetch",
           "notion-query-data-sources"

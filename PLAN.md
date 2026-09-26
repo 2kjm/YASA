@@ -46,7 +46,7 @@ every 30 min (two TrueForge schedules)  ──►  Agent 1  support-triage   (un
    2. Notion knowledge base: known issue?
    3. Sentry: errors for this customer's email, release, stack trace
    4. attachments → opened in the sandbox; can't → ask in Slack, tag ai-waiting-human, stop
-   5. repro: sandbox clones this repo at the Sentry release, replays the failing request
+   5. repro: sandbox downloads this repo at the Sentry release (tarball), replays the failing request
    6. Slack #support-help: triage report (verdict, confidence, evidence, repro); tag ai-triaged
                          │
 human opens TrueForge chat ──► Agent 2  support-guide   (human present)
@@ -79,8 +79,8 @@ human opens TrueForge chat ──► Agent 2  support-guide   (human present)
 | Role | Service (free tier) | MCP in TrueForge | Auth |
 |---|---|---|---|
 | Desk | Freshdesk `mittailabs.freshdesk.com` | custom `freshdesk` → `https://<subdomain>.freshdesk.com/mcp` | header `Authorization: <api key>` |
-| CRM | Notion database **Customers** (from `customers.csv`) | catalog `notion` → `https://mcp.notion.com/mcp` | OAuth (DCR) |
-| Knowledge base | Notion page **Knowledge base** (5 sub-pages from `kb/*.md`) | same `notion` connector | OAuth (DCR) |
+| CRM | Notion database **Customers** (created by `scripts/seed_notion.py`) | catalog `notion` → `https://mcp.notion.com/mcp` | OAuth (DCR) |
+| Knowledge base | Notion page **Knowledge base** (5 sub-pages from `kb/*.md`, same script) | same `notion` connector | OAuth (DCR) |
 | Errors | Sentry Python project (EU region `ingest.de.sentry.io`) | catalog `sentry` → `https://mcp.sentry.dev/mcp` | OAuth (DCR) |
 | Human channel | Slack, channel `#support-help` | custom `slack` → `korotovsky/slack-mcp-server` on `localhost:13080/mcp` | none (localhost) |
 | Sandbox | TrueForge local sandbox (macOS/Linux) | built in | none |
@@ -121,7 +121,7 @@ Source of truth: `agents/support-triage.json`, `agents/support-guide.json`, `pro
 `register.py` fills `$VAR` (from `.env`) and `@file` in the specs.
 
 - support-triage: freshdesk `start_conversation, fetchSearchTickets, fetchTicket, fetchTicketConversations,
-  updateTicket` (no approvals); notion `notion-search, notion-fetch, notion-query-data-sources`; sentry `@read-only`
+  updateTicket` (no approvals); notion `notion-get-tool-access, notion-search, notion-fetch, notion-query-data-sources`; sentry `@read-only`
   (6 tools; excludes `update_issue`, `analyze_issue_with_seer`, `execute_sentry_tool`); slack post/history/replies;
   sandbox and dynamic subagents on; ask-user off.
 - support-guide: same reads + freshdesk `replyTicket`, `updateTicket`, both **require approval**; slack read; sandbox on.
@@ -137,7 +137,8 @@ Source of truth: `agents/support-triage.json`, `agents/support-guide.json`, `pro
 - `product/app.py`: FastAPI "Acme Invoicing" with one planted bug: `GET /invoices/{id}/export` encodes the filename
   with `.encode("ascii")` → 500 for "Café Mocha Pvt Ltd" (`é` is valid latin-1, so latin-1 would not crash). Sentry
   from `SENTRY_DSN`, user email per request from `x-user-email`, `release` = git HEAD. Self-check: `product/check.py`.
-- `scripts/customers.py`: the 4 demo customers; writes `customers.csv` (gitignored) for the Notion import.
+- `scripts/customers.py`: the 4 demo customers. `scripts/seed_notion.py` creates the Notion CRM rows and KB pages
+  through TrueForge's own Notion connector (one session; refuses to duplicate). Done ✅ 2026-09-26.
 - `scripts/traffic.py`: calls the local app (`:8765`) as those customers so **real** Sentry events exist. Done once:
   release `79d8d10`, `UnicodeEncodeError` for `karun+cafemocha@…` (verified in Sentry).
 - `kb/*.md`: 5 KB pages. `tickets/tickets.md` + `tickets/export-logs.zip`: the 5 ticket emails:
@@ -152,14 +153,14 @@ Source of truth: `agents/support-triage.json`, `agents/support-guide.json`, `pro
 ```
 PLAN.md  README.md  .env.example  .gitignore
 agents/  prompts/  kb/  tickets/  product/ (app.py, check.py, requirements.txt)
-scripts/ start-trueforge.sh  register.py  customers.py  traffic.py
+scripts/ start-trueforge.sh  register.py  seed_notion.py  customers.py  traffic.py
 ```
 
 ## 10. Steps (each ends with a check)
 
 | # | Step | Done when |
 |---|---|---|
-| 1 | **Accounts (human)**: Freshdesk ✅, Sentry ✅, Notion (import `customers.csv` as **Customers**; page **Knowledge base** with `kb/*.md`), Slack (workspace, `#support-help`, bot scopes `channels:read, channels:history, chat:write, users:read`, `xoxb-` token, bot invited), model key. Freshdesk admin: turn **off** requester notifications "Agent solves the ticket" and "Agent closes the ticket"; keep "New ticket created" on. | Accounts exist, `.env` filled |
+| 1 | **Accounts (human)**: Freshdesk ✅, Sentry ✅, Notion (connect it, then `scripts/seed_notion.py` ✅), Slack (workspace, `#support-help`, bot scopes `channels:read, channels:history, chat:write, users:read`, `xoxb-` token, bot invited), model key. Freshdesk admin: turn **off** requester notifications "Agent solves the ticket" and "Agent closes the ticket"; keep "New ticket created" on. | Accounts exist, `.env` filled |
 | 2 | **TrueForge (human clicks)**: model provider; connect catalog `sentry`, `notion`. | `GET /api/v1/mcp-servers/{name}/tools` works for sentry, notion, freshdesk ✅; a test chat runs `git clone` + `pip install` in the sandbox |
 | 3 | **Slack MCP**: `set -a && . ./.env && set +a && npx -y slack-mcp-server@latest --transport http` (streamable HTTP at `127.0.0.1:13080/mcp`, verified from source; `SLACK_MCP_ADD_MESSAGE_TOOL=<channel id>` limits posting). | Tool list returns; a test post lands in `#support-help` |
 | 4 | **Seed**: send the 5 ticket emails (Sentry data ✅). | Tickets exist in Freshdesk, each got the ack email |
@@ -211,4 +212,8 @@ Cut order if late: ticket 5 → ticket 4 → second schedule. Never cut the sand
   which reads only `FRESHDESK_DOMAIN` from `.env` (the sandbox may inherit TrueForge's environment).
 - **Subagents** share the parent's tools and sandbox but **not its instructions** (`AgentThread.mjs`), so
   `prompts/triage.md` has the root copy the "Per-ticket procedure" verbatim into each `create_sub_agent` input.
+- **No `git` in the local sandbox on macOS**: `/usr/bin/git` is an xcode-select shim that the sandbox blocks. The repro
+  downloads `https://codeload.github.com/2kjm/YASA/tar.gz/<sha>` with curl instead (allowed host).
+- Notion's `notion-search` asks for `notion-get-tool-access` first; it's in the allowlist. `title_only` search
+  filters need a Business plan (ignored on free).
 - Product runs on **:8765** (a Docker container holds :8000 on the build laptop).
