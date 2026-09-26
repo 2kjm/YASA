@@ -187,14 +187,15 @@ Cut order if late: ticket 5 → ticket 4 → second schedule. Never cut the sand
 
 ## 12. Still unverified (check at the step named)
 
-1. Notion MCP finds the **Customers** row by email and the KB pages on a free workspace (step 4).
-2. Sentry `search_events` finds the event by `user.email` in the EU-region org (step 4). OAuth connected ✅.
+1. ~~Notion finds the CRM row and KB pages~~ verified in the 15:30 sweep.
+2. ~~Sentry `search_events` by `user.email`~~ verified in the 15:30 sweep.
 3. ~~Sandbox download + install~~ verified (tarball + venv + legacy-certs).
 4. Freshdesk trial MCP allowance lasts the day (Growth plan lists 1,200 actions/year). Keep schedules paused
    between test runs if calls get tight.
-5. Can the sandbox download a Freshdesk attachment (sandbox network is github/pypi only)? If not, ticket 4 still
-   ends in `ai-waiting-human` ("could not download"), the intended outcome.
-6. Two schedules on one agent are accepted (step 4).
+5. ~~Sandbox downloads a Freshdesk attachment~~ no: TrueForge hardcodes the local sandbox's hosts
+   (`LOCAL_SANDBOX_ALLOWED_DOMAINS`, GitHub + PyPI), S3 gets a 403. The zip ticket ends in `ai-waiting-human`.
+6. ~~Two schedules on one agent~~ verified: the `:30` one fired on its own at 15:30.
+   One sweep of 6 tickets: ~5 min, 36 Freshdesk + 39 Notion + 18 Sentry tool calls, 36 sandbox runs.
 
 ## 13. Rules for the building agent
 

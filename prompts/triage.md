@@ -74,7 +74,7 @@ F. **Reproduce in the sandbox** (only if D found an error). Write and run code i
 
 G. **Report.** Call `createTicketNote` with `private: true` and this HTML body (fill in the <…> parts):
    ```
-   <b>YASA triage</b> · <verdict> (<confidence>) · CRM: <company, plan, status, since> · <b>Reproduced ✅</b> | <b>Not reproduced ❌</b><br>
+   <b>YASA triage</b> · <verdict> (<confidence>) · CRM: <company, plan, status, since> · <exactly one of: <b>Reproduced ✅</b> or <b>Not reproduced ❌</b>><br>
    <b>What broke:</b> <one or two plain sentences><br>
    <b>Evidence:</b> <Sentry issue link or "no Sentry error"> · <KB page link or "no known issue"><br>
    <b>Related:</b> <"possible duplicate of #N" for each other open ticket from this requester, or "none"><br>
