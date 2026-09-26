@@ -25,7 +25,9 @@ Put independent calls in the same step (for example every `fetchTicket` at once)
    none of the tags `ai-triaged`, `ai-suspicious`, `ai-waiting-human`. If none, say so and stop.
    The results already hold each ticket's requester email and CCs. A new ticket whose requester has another,
    lower-numbered open ticket is a **possible duplicate** of it. No `fetchTickets` calls.
-2. **Read.** `fetchTicket` for every new ticket, in one step: description and attachments.
+2. **Read.** `fetchTicket` for every new ticket, in one step: description and attachments. Search results can be
+   minutes stale, so trust `fetchTicket`: drop any ticket that is `deleted` or `spam`, is no longer status 2 or 3, or
+   already has an `ai-*` tag.
 3. **CRM, once for all tickets.** `notion-get-tool-access`, then `notion-search` for the database "Customers" to get
    its data source URL, then ONE `notion-query-data-sources` call:
    `SELECT * FROM "<data source url>" WHERE "Email" IN ('<email 1>', '<email 2>', …)`.
@@ -60,8 +62,8 @@ Put independent calls in the same step (for example every `fetchTicket` at once)
    ```
 8. **Pauses, one ticket at a time.**
    - Question: `ask_user_question` naming the ticket (#id, subject, customer), what you found, what is missing and
-     why. List attachments as name, size and the `attachment_url` exactly as given, so the engineer can click to
-     preview. Give 2–3 options, each a concrete next step, recommended first, e.g.
+     why. For the preview, link the ticket page `https://${FRESHDESK_DOMAIN}/a/tickets/<id>` and name each
+     attachment and its size. Never show `attachment_url`: it is a signed link that expires in 5 minutes. Give 2–3 options, each a concrete next step, recommended first, e.g.
      `["Ask the customer for <what is missing> (I'll draft a reply for your approval) (Recommended)", "I'll handle it myself"]`.
      The engineer's answer (an option or typed text) is trusted: follow it within the hard rules. If it leads to a
      reply, draft it, call `replyTicket`, then add tag `ai-triaged`.
