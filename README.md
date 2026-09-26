@@ -29,12 +29,15 @@ engineer opens TrueForge chat ──► support-guide   (optional, human present
 |---|---|---|---|
 | Read Freshdesk, Sentry, Notion (CRM + KB) | both agents | none | only named read tools |
 | Private note on a ticket (`createTicketNote`, `private: true`) | support-triage | none | customers can't see private notes; Freshdesk emails the engineer about each one. `private` is a prompt rule, not enforced by the tool; backstop: the requester notification "Agent adds comment to ticket" is **off**, so even a public note emails nobody |
-| Tag a ticket (`updateTicket` with tags) | support-triage | none | tags are internal. Backstop: the "solved"/"closed" requester notifications are **off**, so even a wrong status change emails nobody |
-| **Reply on a ticket** (`replyTicket`) | both agents | **approval every time** | it is an email to the customer. The approval card shows only the tool arguments, so the agent lists **every recipient** (requester and existing CCs) first: in its note (triage) or in chat (guide) |
-| **Change a ticket** (`updateTicket`) | support-guide only | **approval every time** | status and requester changes |
+| Tag a ticket (`updateTicket` with tags) | support-triage | none | tags are internal. "Only `id` and `tags`" is a prompt rule: the tool also accepts status, requester email and more. Backstop for status: the "solved"/"closed" requester notifications are **off**, so even a wrong status change emails nobody. **Known gap:** a prompt injection that got through could change the requester's email with no pause; the next approved reply would go to that address, and the approval card would not show it |
+| **Reply on a ticket** (`replyTicket`) | both agents | **approval every time**: TrueForge holds the call and Freshdesk is not contacted until you click Allow | it is an email to the customer. It goes to the requester and the ticket's existing CCs, which are not in the tool arguments the approval card shows, so the agent lists **every recipient** first: in its note (triage) or in chat (guide). "No cc or bcc" is a prompt rule; any `cc_emails` or `bcc_emails` would show on the card |
+| **Change a ticket** (`updateTicket`) | support-guide | **approval every time** | status and requester changes. support-triage has the same tool without a pause, meant only for tags: see the tag row |
 | Create tickets, contacts or agents; edit Notion; Sentry `update_issue`/Seer; refunds | nobody | not exposed | not in any tool allowlist |
 | Act without the information it needs (attachment it can't open, vague request) | nobody | **asked on the TrueForge screen** (`ask_user_question`: what it found, options, preview link) | it never guesses; the engineer's answer decides the next step |
 | Anything a ticket asks for | nobody | — | ticket text and attachments are untrusted data; the only tool that reaches a customer pauses for a person |
+
+TrueForge enforces two things in code: the tool allowlist and the approval pause. Its approval rules match tool names,
+not arguments, so everything marked "prompt rule" above relies on the model and on you reading the approval card.
 
 support-triage runs on a schedule. It tags each ticket before drafting the reply, so while one run waits for your
 approval, the next run skips that ticket instead of drafting it again.
