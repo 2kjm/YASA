@@ -1,4 +1,4 @@
-# Support Engineer Agent — hackathon build plan
+# YASA — Yet Another Support Agent: hackathon build plan
 
 Handover doc for the agent building this. Everything below is decided; build it, don't re-open the idea.
 Facts marked **(verified)** were checked against docs or the local TrueForge 0.2.1 OpenAPI on 2026-09-26.
@@ -10,7 +10,7 @@ Facts marked **(unverified)** must be checked at the step that uses them.
   Build window **12:00–19:00 IST**, mentor checkpoint **16:00**, demos **19:30** (5 minutes), results 21:00.
 - Builder: solo. You are the second agent helping them.
 - Code must be written today. Public repo, working README, **no keys in repo or video**, disclose AI assistants.
-- This folder (`~/Documents/projects/support-agent`) becomes the public repo `2kjm/support-agent`
+- This folder (`~/Documents/projects/support-agent`) becomes the public repo `2kjm/YASA`
   (public from the start: the sandbox clones it). All code in it is written today.
 - Demo inbox: plus-addresses of `karun@mittailabs.com` (`+cafemocha`, `+spam`, `+totals`, `+attach`, `+known`),
   added as Gmail "Send mail as" aliases so tickets can be sent from them.
