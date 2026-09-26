@@ -15,8 +15,10 @@ Facts marked **(unverified)** must be checked at the step that uses them.
 - Demo inbox: plus-addresses of `karun@mittailabs.com` (`+cafemocha`, `+spam`, `+totals`, `+attach`, `+known`),
   added as Gmail "Send mail as" aliases so tickets can be sent from them.
 - Model provider: added in TrueForge UI (Settings → Model providers); agent specs read its name from the API.
-- Sandbox: TrueForge 0.2.1 accepts only `daytona` as a sandbox provider (verified in installed source).
-  Code execution is a **required submission element**, not optional.
+- Sandbox: **no account needed.** In standalone mode with no sandbox provider configured, TrueForge uses a local
+  sandbox (`@anthropic-ai/sandbox-runtime`, macOS Seatbelt / Linux bubblewrap): reads/writes only its own folder,
+  network limited to github.com and pypi.org (verified in installed source; log line "Local sandbox fallback is
+  available"). Daytona is only for hosted setups. Code execution is a **required submission element**.
 - TrueForge 0.2.1 is running at `http://localhost:8790` (started with `npx @truefoundry/trueforge@latest`,
   Node ≥ 22.14). No local auth. As of 12:30 it had no model provider, sandbox provider, connectors, agents or schedules.
 
@@ -86,7 +88,7 @@ human opens TrueForge chat ──► Agent 2  support-guide   (human present)
 | Errors / logs | Sentry (Python project) | catalog `sentry` → `https://mcp.sentry.dev/mcp` | OAuth (DCR) |
 | Customer data | Stripe **test mode / sandbox** | catalog `stripe` → `https://mcp.stripe.com` | OAuth (DCR) |
 | Human channel | Slack workspace, channel `#support-help` | custom: `korotovsky/slack-mcp-server` on localhost | bot token `xoxb-` |
-| Sandbox | Daytona | built into TrueForge | API key in Settings → Sandbox |
+| Sandbox | TrueForge local sandbox (macOS/Linux) | built in | none |
 | Model | OpenAI credits or TrueFoundry gateway | — | Settings → Model providers |
 
 Atlassian MCP calls consume Rovo credits (verified); the Free-plan allowance is **unverified**. Fallback if it
@@ -241,8 +243,8 @@ run command, `register.py`, seed, "run now", the Where-it-stops table, AI-assist
 
 | # | Time | Step | Done when |
 |---|---|---|---|
-| 1 | 12:30–13:00 | **Accounts (human, browser)**: Atlassian site with JSM + Confluence (project `SUP`, space `KB`, note the support email under Project settings → Channels → Email); Sentry Python project (DSN); Stripe test mode; Slack workspace + `#support-help` + app with bot scopes `channels:read, channels:history, chat:write, users:read`, installed, `xoxb-` token, bot invited; Daytona API key; model key. Keys go in a local `.env`, never in chat. | All accounts exist |
-| 2 | 13:00–13:15 | **TrueForge settings (human clicks)**: model provider, Daytona sandbox, connect catalog `jira`, `confluence`, `sentry`, `stripe` (pick Stripe's test account on consent). | `GET /api/v1/mcp-servers/{name}/tools` returns tools for all four; a test chat runs `python -c 'print(1)'` in the sandbox and `git clone` + `pip install` work in it (Daytona egress **unverified**) |
+| 1 | 12:30–13:00 | **Accounts (human, browser)**: Atlassian site with JSM + Confluence (project `SUP`, space `KB`, note the support email under Project settings → Channels → Email); Sentry Python project (DSN); Stripe test mode; Slack workspace + `#support-help` + app with bot scopes `channels:read, channels:history, chat:write, users:read`, installed, `xoxb-` token, bot invited; model key. Keys go in a local `.env`, never in chat. | All accounts exist |
+| 2 | 13:00–13:15 | **TrueForge settings (human clicks)**: model provider, connect catalog `jira`, `confluence`, `sentry`, `stripe` (pick Stripe's test account on consent). | `GET /api/v1/mcp-servers/{name}/tools` returns tools for all four; a test chat runs `python -c 'print(1)'` in the sandbox and `git clone` + `pip install` work in it (local sandbox allows github.com, pypi.org) |
 | 3 | 13:15–13:30 | **Slack MCP** (verified from its source): `set -a && . ./.env && set +a && npx -y slack-mcp-server@latest --transport http` → streamable HTTP at `http://127.0.0.1:13080/mcp`. Env: `SLACK_MCP_XOXB_TOKEN`, `SLACK_MCP_ADD_MESSAGE_TOOL=<channel id>` (posting allowed only there). Add to TrueForge: `POST /api/v1/settings/mcp-servers` `{manifest:{type:"remote",name:"slack",url:"http://localhost:13080/mcp",description}}` (`auth` optional; none needed on localhost). Bot tokens have no search tool; fine, we use history/replies. | Tool list returns; a test post lands in `#support-help` |
 | 4 | 13:30–14:45 | **Product + seed**: `product/`, `seed_stripe.py`, `traffic.py`, 5 KB pages, send the 4–5 ticket emails. | Sentry shows the export error with the customer email; tickets exist in `SUP` |
 | 5 | 14:45–15:50 | **Agent 1**: prompts/triage.md, real tool names in the spec, `register.py` creates agents + 2 schedules, run now. | One sweep labels all tickets correctly and posts Slack reports; the session view shows tool calls, subagents, sandbox code |
@@ -270,7 +272,7 @@ approval.
 2. Catalog `jira`/`confluence` tool names match the Rovo list (step 2).
 3. Adding a label does not email the JSM customer (step 4, one dummy ticket to your own address).
 4. `@read-only` excludes Stripe and Sentry write tools (step 2).
-5. Daytona free tier allows `git clone` and `pip install` (step 2). Fallback: agent writes the repro from the Sentry
+5. ~~Daytona egress~~ not needed; local sandbox allows github.com + pypi.org. Still check once in step 2. Fallback: agent writes the repro from the Sentry
    stack trace and runs it without cloning.
 6. ~~korotovsky Slack MCP env var names and HTTP path~~ verified, see step 3.
 7. Two schedules on one agent are accepted (step 5).
