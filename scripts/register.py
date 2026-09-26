@@ -25,14 +25,15 @@ def call(method, path, body=None):
 
 
 def resolve(value):
-    # "$VAR" -> env var, "@path" -> file contents (relative to repo root)
+    # "$VAR" -> env var, "@path" -> file contents (relative to repo root) when that file exists, so tool selectors
+    # like "@read-only" pass through
     if isinstance(value, dict):
         return {k: resolve(v) for k, v in value.items()}
     if isinstance(value, list):
         return [resolve(v) for v in value]
     if isinstance(value, str) and value.startswith("$"):
         return os.environ[value[1:]]
-    if isinstance(value, str) and value.startswith("@"):
+    if isinstance(value, str) and value.startswith("@") and (ROOT / value[1:]).is_file():
         return (ROOT / value[1:]).read_text()
     return value
 
