@@ -15,6 +15,7 @@
         "enable_tools": [
           "start_conversation",
           "fetchSearchTickets",
+          "fetchTickets",
           "fetchTicket",
           "fetchTicketConversations",
           "updateTicket"

@@ -47,7 +47,7 @@ every 30 min (two TrueForge schedules)  ──►  Agent 1  support-triage   (un
    3. Sentry: errors for this customer's email, release, stack trace
    4. attachments → opened in the sandbox; can't → ask in Slack, tag ai-waiting-human, stop
    5. repro: sandbox downloads this repo at the Sentry release (tarball), replays the failing request
-   6. Slack #support-help: triage report (verdict, confidence, evidence, repro); tag ai-triaged
+   6. Slack #support-help: triage report (verdict, confidence, evidence, repro, possible duplicates); tag ai-triaged
                          │
 human opens TrueForge chat ──► Agent 2  support-guide   (human present)
    what went wrong in 3 lines, full repro steps, evidence. No fixing.
@@ -110,7 +110,7 @@ Custom MCP servers (freshdesk, slack) are registered by `scripts/register.py`; c
 | Read Freshdesk, Sentry, Notion (CRM + KB) | both agents | none | only named read tools (§7) |
 | Post to `#support-help` | agent 1 | none; the Slack server only allows that one channel | internal only |
 | Tag a ticket (`updateTicket` with tags) | agent 1 | none | tags are internal. Backstop: Freshdesk's requester notifications for "resolved"/"closed" are **off**, so even a wrong status change emails nobody |
-| **Reply on a ticket** (`replyTicket`) | agent 2 only | **approval every time** | it is an email to the customer; the card shows body, cc, bcc |
+| **Reply on a ticket** (`replyTicket`) | agent 2 only | **approval every time** | it is an email to the customer. The card shows only the tool arguments, so the agent first lists **every recipient** (requester + the ticket's existing CCs) in chat |
 | **Change a ticket** (`updateTicket`) | agent 2 only | **approval every time** | status/requester changes |
 | Notes, create tickets/contacts/agents, Notion edits, Sentry `update_issue`/Seer, refunds | nobody | not exposed | not in any allowlist |
 | Anything triggered by ticket text | nobody | — | ticket body and attachments are untrusted data; agent 1 has no tool that reaches a customer |
@@ -120,8 +120,8 @@ Custom MCP servers (freshdesk, slack) are registered by `scripts/register.py`; c
 Source of truth: `agents/support-triage.json`, `agents/support-guide.json`, `prompts/triage.md`, `prompts/guide.md`.
 `register.py` fills `$VAR` (from `.env`) and `@file` in the specs.
 
-- support-triage: freshdesk `start_conversation, fetchSearchTickets, fetchTicket, fetchTicketConversations,
-  updateTicket` (no approvals); notion `notion-get-tool-access, notion-search, notion-fetch, notion-query-data-sources`; sentry `@read-only`
+- support-triage: freshdesk `start_conversation, fetchSearchTickets, fetchTickets, fetchTicket,
+  fetchTicketConversations, updateTicket` (no approvals); notion `notion-get-tool-access, notion-search, notion-fetch, notion-query-data-sources`; sentry `@read-only`
   (6 tools; excludes `update_issue`, `analyze_issue_with_seer`, `execute_sentry_tool`); slack post/history/replies;
   sandbox and dynamic subagents on; ask-user off.
 - support-guide: same reads + freshdesk `replyTicket`, `updateTicket`, both **require approval**; slack read; sandbox on.

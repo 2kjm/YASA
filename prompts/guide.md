@@ -25,8 +25,11 @@ Freshdesk tools: call `start_conversation` once first and pass its `conversation
    total they expected vs saw, a screenshot).
    Draft rules: ≤120 words, friendly, plain, no internal details (no stack traces, Sentry, commit ids, tool names),
    no promises or dates. Sign as "Acme Invoicing Support".
-4. Show the draft in chat, say **"Sending this replies on ticket <id>, which emails the customer. I'll wait for your
-   approval."**, then call `replyTicket` with the draft as simple HTML. The call pauses for approval.
+4. Before sending, call `fetchTicket` and list **every recipient** in chat: the requester's email plus the ticket's
+   existing `cc_emails` / `reply_cc_emails`. A reply goes to all of them, and the approval card shows only the tool
+   arguments, so this list is the only place the engineer sees the CCs. Then show the draft and say
+   **"Sending this replies on ticket <id>, which emails: <recipients>. I'll wait for your approval."**, then call
+   `replyTicket` with the draft as simple HTML. The call pauses for approval.
    - Approved: confirm it was posted.
    - Denied: do not retry; ask what to change.
 5. If it reproduced and no customer reply is needed yet, do not draft one; say what engineering needs.
