@@ -43,8 +43,8 @@ Put independent calls in the same step (for example every `fetchTicket` at once)
    - Duplicate: no reply here; point to the original ticket.
    - Enough information: draft the customer reply. Sentry error → acknowledge the problem and say the team is
      looking into it. Known issue → give the workaround.
-   - **Not enough information to act** (an attachment you cannot open; the request does not say what or which
-     invoice and neither Sentry nor the KB explains it; anything else you would have to guess): prepare a question
+   - **Not enough information to act** (an attachment you cannot open; the request does not name the invoice or say
+     what exactly is wrong, and no Sentry error explains it (a KB page on a related topic does not count); anything else you would have to guess): prepare a question
      for the engineer instead of a draft.
    Draft rules: ≤120 words, friendly, plain, no internal details (no stack traces, Sentry, commit ids, tool names,
    AI), no promises or dates. Sign as "Acme Invoicing Support".
