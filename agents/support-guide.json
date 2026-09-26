@@ -7,7 +7,6 @@
     "mcp_servers": [
       { "name": "jira", "enable_tools": ["@read-only", "addOrEditJiraIssueComment", "transitionJiraIssue"],
         "require_approval_for_tools": ["addOrEditJiraIssueComment", "transitionJiraIssue"] },
-      { "name": "confluence", "enable_tools": ["@read-only"] },
       { "name": "sentry", "enable_tools": ["@read-only"] },
       { "name": "notion", "enable_tools": ["@read-only"] },
       { "name": "slack", "enable_tools": ["conversations_replies", "conversations_history"] }
