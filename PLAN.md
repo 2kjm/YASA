@@ -232,10 +232,10 @@ Next: open *support-guide* in TrueForge and ask about SUP-12.
 PLAN.md  README.md  .env.example  .gitignore (.env, *.sqlite, TrueForge data dir)
 agents/support-triage.json  agents/support-guide.json
 prompts/triage.md  prompts/guide.md
-product/ (FastAPI app)   scripts/seed_stripe.py  scripts/traffic.py  scripts/register.sh (agents + schedules via API)
+product/ (FastAPI app)   scripts/seed_stripe.py  scripts/traffic.py  scripts/register.py (agents + schedules via API)
 ```
 README: prerequisites, account sign-ups, TrueForge start command, connector setup (Settings → Connectors), Slack MCP
-run command, `register.sh`, seed, "run now", the Where-it-stops table, AI-assistant disclosure.
+run command, `register.py`, seed, "run now", the Where-it-stops table, AI-assistant disclosure.
 
 ## 10. Steps (time-boxed; each ends with a check)
 
@@ -245,7 +245,7 @@ run command, `register.sh`, seed, "run now", the Where-it-stops table, AI-assist
 | 2 | 13:00–13:15 | **TrueForge settings (human clicks)**: model provider, Daytona sandbox, connect catalog `jira`, `confluence`, `sentry`, `stripe` (pick Stripe's test account on consent). | `GET /api/v1/mcp-servers/{name}/tools` returns tools for all four; a test chat runs `python -c 'print(1)'` in the sandbox and `git clone` + `pip install` work in it (Daytona egress **unverified**) |
 | 3 | 13:15–13:30 | **Slack MCP**: run `korotovsky/slack-mcp-server` with HTTP transport on `localhost:13080`, bot token, `SLACK_MCP_ADD_MESSAGE_TOOL=<#support-help channel id>`; add it via `POST /api/v1/settings/mcp-servers`. Exact env names and HTTP path: check its README (**unverified**). | Tool list returns; a test post lands in `#support-help` |
 | 4 | 13:30–14:45 | **Product + seed**: `product/`, `seed_stripe.py`, `traffic.py`, 5 KB pages, send the 4–5 ticket emails. | Sentry shows the export error with the customer email; tickets exist in `SUP` |
-| 5 | 14:45–15:50 | **Agent 1**: prompts/triage.md, real tool names in the spec, `register.sh` creates agent + 2 schedules, run now. | One sweep labels all tickets correctly and posts Slack reports; the session view shows tool calls, subagents, sandbox code |
+| 5 | 14:45–15:50 | **Agent 1**: prompts/triage.md, real tool names in the spec, `register.py` creates agents + 2 schedules, run now. | One sweep labels all tickets correctly and posts Slack reports; the session view shows tool calls, subagents, sandbox code |
 | — | 16:00 | **Mentor checkpoint**: show step 5 end to end. | |
 | 6 | 16:00–17:15 | **Agent 2**: prompts/guide.md, register, walk tickets 1 and 3; approve the clarifying reply. | The customer's inbox receives the approved reply; Deny leaves the ticket untouched |
 | 7 | 17:15–18:15 | **Repo**: README a stranger can follow, `.env.example`, secrets scan (`git grep -nE 'sk_(test|live)_|xox[bp]-|glsa_|ATATT'`), make it public. | Fresh clone + README reaches "run now" |
@@ -286,3 +286,15 @@ approval.
 - Anything that sends to a customer is tested with Deny first, then Allow once.
 - Don't commit TrueForge's SQLite data or any `.env`.
 - All code written today, in this repo. README credits the AI assistants used.
+
+## 14. Found while building (2026-09-26)
+
+- Dynamic sub-agents share the parent's tools and sandbox but **not its instructions** (trueforge-core
+  `AgentThread.mjs` adds user instructions only for the root). `prompts/triage.md` has the root copy a
+  "Per-ticket procedure" section verbatim into each `create_sub_agent` input.
+- Product runs on **:8765** (a Docker container holds :8000 on the build laptop).
+- Model names come from `.env` (`TRIAGE_MODEL`, `GUIDE_MODEL`); `register.py` fills `$VAR` and `@file` in `agents/*.json`.
+- **Unverified**: whether the Atlassian MCP can download ticket attachments. If not, ticket 4 still ends in
+  `ai-waiting-human` ("could not download"), which is the intended outcome anyway.
+- Sentry `release` = the local git HEAD when the app starts. **Push before running `traffic.py`**, or the sandbox
+  can't check out that SHA.

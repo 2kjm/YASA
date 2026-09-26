@@ -1,0 +1,17 @@
+{
+  "name": "support-guide",
+  "description": "Explains a triaged ticket to the on-call human; drafts a clarifying reply that waits for approval.",
+  "manifest": {
+    "model": { "name": "$GUIDE_MODEL", "params": { "temperature": 0.2 } },
+    "instructions": "@prompts/guide.md",
+    "mcp_servers": [
+      { "name": "jira", "enable_tools": ["@read-only", "addOrEditJiraIssueComment", "transitionJiraIssue"],
+        "require_approval_for_tools": ["addOrEditJiraIssueComment", "transitionJiraIssue"] },
+      { "name": "confluence", "enable_tools": ["@read-only"] },
+      { "name": "sentry", "enable_tools": ["@read-only"] },
+      { "name": "stripe", "enable_tools": ["@read-only"] },
+      { "name": "slack", "enable_tools": ["conversations_replies", "conversations_history"] }
+    ],
+    "config": { "sandbox": { "enabled": true }, "ask_user_questions": { "enabled": true } }
+  }
+}
