@@ -29,7 +29,7 @@ task = f"""Set up this Notion workspace for the Acme Invoicing support demo. Cop
 6. Reply with: the Customers database URL and data source id, the Knowledge base page URL, and the 5 child page URLs."""
 
 spec = {
-    "model": {"name": os.environ["GUIDE_MODEL"], "params": {"reasoning_effort": "medium"}},
+    "model": {"name": os.environ["TRIAGE_MODEL"], "params": {"reasoning_effort": "medium"}},
     "instructions": "You set up Notion content exactly as instructed. Creating pages and databases is expected here.",
     "mcp_servers": [{"name": "notion", "require_approval_for_tools": [], "enable_tools": [
         "notion-get-tool-access", "notion-search", "notion-fetch", "notion-create-database", "notion-create-pages"]}],

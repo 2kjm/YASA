@@ -40,7 +40,7 @@ execution**, and approval checkpoints". Submission line: *"Show us where the cod
 ```
 customer email ──► Freshdesk ticket (Freshdesk itself emails "we received it")
                          │
-every 30 min (two TrueForge schedules)  ──►  Agent 1  support-triage   (one agent, the whole queue at once)
+every 30 min (two TrueForge schedules)  ──►  support-triage   (one agent, the whole queue at once)
    1. read the queue; duplicates = same requester (from the search results)
    2. CRM: one Notion query for every sender → legit / suspicious (+ prompt-injection check)
    3. Sentry: one search for every legit sender's email → exception, request, release
@@ -48,22 +48,21 @@ every 30 min (two TrueForge schedules)  ──►  Agent 1  support-triage   (on
    5. private note on each ticket (Freshdesk emails the engineer) + tag
    6. ⏸ QUESTION when information is missing (attachment it can't open, vague request): options + preview link
    7. ⏸ APPROVAL: replyTicket = email to the customer. The run waits in TrueForge until a person clicks Allow.
-                         │
-human opens TrueForge chat ──► Agent 2  support-guide   (human present)
-   (optional) explains a ticket, redrafts a denied reply → ⏸ APPROVAL again
 ```
 
 ## 3. Decisions (and what was rejected)
 
-- **Trigger = 2 TrueForge schedules** (`0 * * * *`, `30 * * * *`, Asia/Kolkata) on agent 1 → 30-min sweep.
+- **Trigger = 2 TrueForge schedules** (`0 * * * *`, `30 * * * *`, Asia/Kolkata) on support-triage → 30-min sweep.
   TrueForge enforces ≥1 h per schedule (`SCHEDULE_MIN_INTERVAL_SECONDS = 3600`, verified). No webhooks; MCP can't push.
 - **The "we received it" ack is Freshdesk's own notification**, not the agent. The agent never emails a customer
   without approval, and scammers don't get an agent-written reply.
-- **Two saved agents. Agent 1 is one agent over the whole queue** (16:10 change). Per-ticket subagents cost 219 tool
+- **One agent** (16:45 change): support-guide (a chat agent to explain a ticket, redraft a denied reply, change
+  status with approval) is removed. Triage drafts, asks and pauses itself; the guide's extras weren't the one job.
+- **One agent over the whole queue** (16:10 change). Per-ticket subagents cost 219 tool
   calls for 6 tickets: 120 were tool-schema lookups repeated per subagent, plus per-ticket CRM/Sentry/Notion lookups;
   and only the root agent may `ask_user_question`. Now: tools preloaded (`preload: true`), one CRM query and one
   Sentry query for all senders, duplicates from the search results.
-- **Agent 1 pauses for people in TrueForge** (15:55 change): `replyTicket` needs approval, and attachment decisions
+- **Triage pauses for people in TrueForge** (15:55 change): `replyTicket` needs approval, and attachment decisions
   use `ask_user_question` whenever information is missing. Tickets are tagged before the
   pause, so the next scheduled run skips them instead of redrafting.
   Its only ways to reach a human are private ticket notes and tags.
@@ -81,7 +80,7 @@ human opens TrueForge chat ──► Agent 2  support-guide   (human present)
   reproduces it anyway. Evidence comes from Sentry. Note: the page's qualifying line lists "code executed in the
   sandbox"; ask the mentor. Earlier sandbox findings are kept in §14.
 - Rejected also: GitHub connector, Grafana, PostHog, Supabase, Linear, web search.
-- **Models**: cheap/fast for agent 1, stronger for agent 2. Set in TrueForge UI; names go in `.env`.
+- **Model**: a cheap/fast one (`TRIAGE_MODEL`), also used by `seed_notion.py`. Set in TrueForge UI; name goes in `.env`.
 
 ## 4. Stack
 
@@ -113,30 +112,21 @@ The custom MCP server (freshdesk) is registered by `scripts/register.py`; catalo
 
 ## 6. Where it stops (the 20-point story; keep this table in the README and the demo)
 
-| Action | Who can | Gate | Why |
-|---|---|---|---|
-| Read Freshdesk, Sentry, Notion (CRM + KB) | both agents | none | only named read tools (§7) |
-| Private note on a ticket (`createTicketNote`, `private: true`) | agent 1 | none | customers can't see private notes. `private` is a prompt rule, not enforced by the tool; backstop: the requester notification "Agent adds comment" is **off**, so even a public note emails nobody |
-| Tag a ticket (`updateTicket` with tags) | agent 1 | none | tags are internal. Backstop: Freshdesk's requester notifications for "resolved"/"closed" are **off**, so even a wrong status change emails nobody |
-| **Reply on a ticket** (`replyTicket`) | agent 2 only | **approval every time** | it is an email to the customer. The card shows only the tool arguments, so the agent first lists **every recipient** (requester + the ticket's existing CCs) in chat |
-| **Change a ticket** (`updateTicket`) | agent 2 only | **approval every time** | status/requester changes |
-| Create tickets/contacts/agents, Notion edits, Sentry `update_issue`/Seer, refunds | nobody | not exposed | not in any allowlist |
-| Anything triggered by ticket text | nobody | — | ticket body and attachments are untrusted data; agent 1 has no tool that reaches a customer |
+Source of truth: the "Where it stops" table in README.md.
 
 ## 7. Agents and prompts
 
-Source of truth: `agents/support-triage.json`, `agents/support-guide.json`, `prompts/triage.md`, `prompts/guide.md`.
+Source of truth: `agents/support-triage.json`, `prompts/triage.md`.
 `register.py` fills `$VAR` (from `.env`) and `@file` in the specs.
 
 - support-triage: freshdesk `start_conversation, fetchSearchTickets, fetchTicket, createTicketNote, updateTicket, replyTicket`; notion `notion-get-tool-access, notion-search, notion-fetch, notion-query-data-sources`; sentry `@read-only`
   (6 tools; excludes `update_issue`, `analyze_issue_with_seer`, `execute_sentry_tool`);
   `replyTicket` **requires approval**; sandbox off; subagents off; ask-user **on**; all MCP tools preloaded.
-- support-guide: same reads + freshdesk `replyTicket`, `updateTicket`, both **require approval**; sandbox off.
 - Explicit tool names instead of `@read-only` for Freshdesk (22 read tools) and Notion (27, mostly AI/session tools):
   fewer tools, fewer wrong picks, exact Where-it-stops table. Verified live 2026-09-26: notion 45 tools, sentry 9,
   freshdesk 40.
 - Freshdesk MCP quirks (verified): call `start_conversation` first and pass its `conversation_id` to every call;
-  some fetch tools say "wait for user confirmation" (agent 1 is told to ignore that); search has no `NOT`, so agent 1
+  some fetch tools say "wait for user confirmation" (triage is told to ignore that); search has no `NOT`, so triage
   searches `(status:2 OR status:3)` and skips `ai-*` tags; `updateTicket` `tags` replaces the list.
 
 ## 8. Demo product and seed data
@@ -171,11 +161,10 @@ scripts/ start-trueforge.sh  register.py  seed_notion.py  customers.py  traffic.
 | 1 | **Accounts (human)**: Freshdesk ✅, Sentry ✅, Notion (connect it, then `scripts/seed_notion.py` ✅), model key. Freshdesk admin: turn **off** requester notifications "Agent adds comment to ticket", "Agent solves the ticket" and "Agent closes the ticket"; keep "New ticket created" on. | Accounts exist, `.env` filled |
 | 2 | **TrueForge (human clicks)**: model provider; connect catalog `sentry`, `notion`. | `GET /api/v1/mcp-servers/{name}/tools` works for sentry, notion, freshdesk ✅; a test chat runs `git clone` + `pip install` in the sandbox |
 | 3 | **Seed**: `uv run --env-file .env scripts/send_tickets.py` (Sentry data ✅). | Tickets exist in Freshdesk, each got the ack email |
-| 4 | **Agent 1**: fill `TRIAGE_MODEL`/`GUIDE_MODEL`, `uv run --env-file .env scripts/register.py run`. | One sweep tags all tickets, adds a private note to each (engineer gets an email) and pauses on each customer reply; the session view shows tool calls, subagents, sandbox code |
+| 4 | **Agent**: fill `TRIAGE_MODEL`, `uv run --env-file .env scripts/register.py run`. | One sweep tags all tickets, adds a private note to each (engineer gets an email) and pauses on each customer reply; the session view shows tool calls, subagents, sandbox code |
 | — | **16:00 mentor checkpoint**: show step 4 end to end. | |
-| 5 | **Agent 2**: walk tickets 1 and 3 in TrueForge chat; Deny once, then Allow the clarifying reply. | The customer's inbox gets the approved reply; Deny leaves the ticket untouched |
-| 6 | **Repo**: README a stranger can follow, secrets scan, fresh-clone test. | Fresh clone + README reaches "run now" |
-| 7 | **Rehearse + record** the 5-minute demo. | Video has no keys on screen |
+| 5 | **Repo**: README a stranger can follow, secrets scan, fresh-clone test. | Fresh clone + README reaches "run now" |
+| 6 | **Rehearse + record** the 5-minute demo. | Video has no keys on screen |
 
 Cut order if late: ticket 5 → ticket 4 → second schedule. Never cut the approval.
 

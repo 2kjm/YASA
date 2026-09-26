@@ -1,6 +1,6 @@
 # YASA: Yet Another Support Agent
 
-Support triage handed to two [TrueForge](https://github.com/truefoundry/trueforge) agents. Built for the
+Support triage handed to a [TrueForge](https://github.com/truefoundry/trueforge) agent. Built for the
 TrueFoundry × Polaris "Agents That Act" hackathon, 2026-09-26.
 
 **You give it** the support queue. **It works out** whether each ticket is from a real customer and what broke
@@ -18,20 +18,16 @@ every 30 min (two TrueForge schedules) ──► support-triage   (one agent, th
    5. private note on each ticket (Freshdesk emails the engineer) + tag
    6. ⏸ QUESTION when information is missing (attachment it can't open, vague request): options + preview link
    7. ⏸ APPROVAL: replyTicket = email to the customer. The run waits in TrueForge until a person clicks Allow.
-                         │
-engineer opens TrueForge chat ──► support-guide   (optional, human present)
-   explains a ticket, redrafts a denied reply → ⏸ APPROVAL again
 ```
 
 ## Where it stops
 
 | Action | Who can | Gate | Why |
 |---|---|---|---|
-| Read Freshdesk, Sentry, Notion (CRM + KB) | both agents | none | only named read tools |
+| Read Freshdesk, Sentry, Notion (CRM + KB) | support-triage | none | only named read tools |
 | Private note on a ticket (`createTicketNote`, `private: true`) | support-triage | none | customers can't see private notes; Freshdesk emails the engineer about each one. `private` is a prompt rule, not enforced by the tool; backstop: the requester notification "Agent adds comment to ticket" is **off**, so even a public note emails nobody |
 | Tag a ticket (`updateTicket` with tags) | support-triage | none | tags are internal. "Only `id` and `tags`" is a prompt rule: the tool also accepts status, requester email and more. Backstop for status: the "solved"/"closed" requester notifications are **off**, so even a wrong status change emails nobody. **Known gap:** a prompt injection that got through could change the requester's email with no pause; the next approved reply would go to that address, and the approval card would not show it |
-| **Reply on a ticket** (`replyTicket`) | both agents | **approval every time**: TrueForge holds the call and Freshdesk is not contacted until you click Allow | it is an email to the customer. It goes to the requester and the ticket's existing CCs, which are not in the tool arguments the approval card shows, so the agent lists **every recipient** first: in its note (triage) or in chat (guide). "No cc or bcc" is a prompt rule; any `cc_emails` or `bcc_emails` would show on the card |
-| **Change a ticket** (`updateTicket`) | support-guide | **approval every time** | status and requester changes. support-triage has the same tool without a pause, meant only for tags: see the tag row |
+| **Reply on a ticket** (`replyTicket`) | support-triage | **approval every time**: TrueForge holds the call and Freshdesk is not contacted until you click Allow | it is an email to the customer. It goes to the requester and the ticket's existing CCs, which are not in the tool arguments the approval card shows, so the agent lists **every recipient** first, in its note. "No cc or bcc" is a prompt rule; any `cc_emails` or `bcc_emails` would show on the card |
 | Create tickets, contacts or agents; edit Notion; Sentry `update_issue`/Seer; refunds | nobody | not exposed | not in any tool allowlist |
 | Act without the information it needs (attachment it can't open, vague request) | nobody | **asked on the TrueForge screen** (`ask_user_question`: what it found, options, preview link) | it never guesses; the engineer's answer decides the next step |
 | Anything a ticket asks for | nobody | — | ticket text and attachments are untrusted data; the only tool that reaches a customer pauses for a person |
@@ -53,7 +49,7 @@ You need Node 20+ (for `npx`), [uv](https://docs.astral.sh/uv/), macOS or Linux,
    In Freshdesk go to Admin → Email Notifications → Requester notifications and turn **off** "Agent adds comment to
    ticket", "Agent solves the ticket" and "Agent closes the ticket".
 2. **Start TrueForge:** run `scripts/start-trueforge.sh`, then open http://localhost:8790.
-   - Settings → Model providers: add your key. Put the model names it lists into `TRIAGE_MODEL` / `GUIDE_MODEL`.
+   - Settings → Model providers: add your key. Put the model names it lists into `TRIAGE_MODEL`.
    - MCP servers: connect **Sentry** and **Notion** from the catalog (OAuth).
    - The start script allowlists your Freshdesk host, because TrueForge's SSRF guard blocks hosts that resolve to
      NAT64 addresses on IPv6-only networks.
@@ -70,20 +66,18 @@ You need Node 20+ (for `npx`), [uv](https://docs.astral.sh/uv/), macOS or Linux,
 5. **Create the tickets:** `uv run --env-file .env scripts/send_tickets.py`. This creates six tickets as the demo
    customers: a real bug, a follow-up duplicate, spam with a prompt injection, a "totals look wrong" ticket that
    has no Sentry error, a password-protected zip, and a known issue.
-6. **Register the agents and run a sweep:** `uv run --env-file .env scripts/register.py run`. This creates the
-   Freshdesk MCP server, both agents and the two schedules (`:00` and `:30`, because TrueForge allows at most one run
+6. **Register the agent and run a sweep:** `uv run --env-file .env scripts/register.py run`. This creates the
+   Freshdesk MCP server, the agent and its two schedules (`:00` and `:30`, because TrueForge allows at most one run
    an hour per schedule), then starts a sweep. Watch it in TrueForge → Sessions: the CRM lookup, Sentry and
    the knowledge base, each done once for the whole queue. Each ticket gets a private note (Freshdesk emails `SUPPORT_ENGINEER_EMAIL`) and an `ai-*` tag, then the
    run **asks you** where it lacks information and **pauses on each customer reply**. Deny one and check that nothing is sent; Allow another and it arrives in
    your inbox.
-7. **Optional:** start a chat with **support-guide** and give it a ticket number. It explains the ticket and can
-   redraft a denied reply, which pauses for approval again.
 
 ## Repo
 
 ```
-agents/     TrueForge agent specs ($VAR from .env, @file from this repo)
-prompts/    triage.md, guide.md: the agents' instructions
+agents/     the TrueForge agent spec ($VAR from .env, @file from this repo)
+prompts/    triage.md: the agent's instructions
 kb/         the knowledge base pages seeded into Notion
 product/    the demo app with its planted bug (app.py) and a self-check (check.py)
 scripts/    start-trueforge.sh, seed_notion.py, traffic.py, send_tickets.py, register.py
@@ -94,4 +88,4 @@ PLAN.md     decisions, rejected alternatives and everything verified while build
 ## AI disclosure
 
 Built on 2026-09-26 with Claude Code (Claude Opus 5.5), which wrote most of the code, prompts and docs under
-the builder's direction. The agents themselves run on OpenAI models through TrueForge.
+the builder's direction. The agent itself runs on an OpenAI model through TrueForge.

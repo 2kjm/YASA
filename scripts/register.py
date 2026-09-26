@@ -1,4 +1,4 @@
-"""Create or update the custom Freshdesk MCP server, both agents and the two 30-minute schedules. Safe to re-run.
+"""Create or update the custom Freshdesk MCP server, the support-triage agent and its two schedules. Safe to re-run.
 Run: uv run --env-file .env scripts/register.py        (register)
      uv run --env-file .env scripts/register.py run    (also trigger a triage sweep now)"""
 import json
