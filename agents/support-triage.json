@@ -52,7 +52,7 @@
         "enabled": true
       },
       "ask_user_questions": {
-        "enabled": false
+        "enabled": true
       },
       "iteration_limit": 150
     }

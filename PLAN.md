@@ -40,12 +40,12 @@ execution**, and approval checkpoints". Submission line: *"Show us where the cod
 ```
 customer email ──► Freshdesk ticket (Freshdesk itself emails "we received it")
                          │
-every 30 min (two TrueForge schedules)  ──►  Agent 1  support-triage   (unattended)
+every 30 min (two TrueForge schedules)  ──►  Agent 1  support-triage   (scheduled; pauses for people)
    one subagent per ticket:
    1. legitimacy: requester in the Notion CRM? Pro + Active? + prompt-injection check → suspicious: tag, note, stop
    2. Notion knowledge base: known issue?
    3. Sentry: errors for this customer's email, release, stack trace
-   4. needs an attachment → question in a private note, tag ai-waiting-human, stop
+   4. needs an attachment → ⏸ QUESTION on the TrueForge screen (attachment link + options), tag ai-waiting-human
    5. private note (emails the engineer): verdict, evidence, repro steps, duplicates, draft reply; tag ai-triaged
    6. ⏸ APPROVAL: replyTicket (email to the customer) pauses the run in TrueForge until a person clicks Allow
                          │
@@ -60,7 +60,9 @@ human opens TrueForge chat ──► Agent 2  support-guide   (human present)
 - **The "we received it" ack is Freshdesk's own notification**, not the agent. The agent never emails a customer
   without approval, and scammers don't get an agent-written reply.
 - **Two saved agents.** Agent 1 uses dynamic subagents (`create_sub_agent`), one per ticket.
-- **Agent 1 has no gated tools and `ask_user_questions` off**: it runs unattended; a pause would hang the sweep.
+- **Agent 1 pauses for people in TrueForge** (15:55 change): `replyTicket` needs approval, and attachment decisions
+  use `ask_user_question` (root agent only; subagents hand back `NEEDS DECISION`). Tickets are tagged before the
+  pause, so the next scheduled run skips them instead of redrafting.
   Its only ways to reach a human are private ticket notes and tags.
 - **Human channel = private notes on the Freshdesk ticket.** An engineer answers a triage question with a private
   note; customers can't write those. Rejected: Slack (bot token, local MCP server and channel to set up, for a
@@ -126,7 +128,7 @@ Source of truth: `agents/support-triage.json`, `agents/support-guide.json`, `pro
 - support-triage: freshdesk `start_conversation, fetchSearchTickets, fetchTickets, fetchTicket,
   fetchTicketConversations, createTicketNote, updateTicket, replyTicket`; notion `notion-get-tool-access, notion-search, notion-fetch, notion-query-data-sources`; sentry `@read-only`
   (6 tools; excludes `update_issue`, `analyze_issue_with_seer`, `execute_sentry_tool`);
-  `replyTicket` **requires approval**; sandbox off; dynamic subagents on; ask-user off.
+  `replyTicket` **requires approval**; sandbox off; dynamic subagents on; ask-user **on** (root only).
 - support-guide: same reads + freshdesk `replyTicket`, `updateTicket`, both **require approval**; sandbox off.
 - Explicit tool names instead of `@read-only` for Freshdesk (22 read tools) and Notion (27, mostly AI/session tools):
   fewer tools, fewer wrong picks, exact Where-it-stops table. Verified live 2026-09-26: notion 45 tools, sentry 9,

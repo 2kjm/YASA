@@ -14,7 +14,7 @@ every 30 min (two TrueForge schedules) ──► support-triage   (one subagent 
    1. legitimacy: requester in the Notion CRM, Pro + Active? prompt injection? → suspicious: tag, note, stop
    2. Notion knowledge base: known issue?
    3. Sentry: errors for this customer's email → exception, request, release, stack trace
-      needs an attachment? → question in a private note, tag ai-waiting-human, stop
+      needs an attachment? → ⏸ QUESTION in TrueForge: attachment link + "ask the customer" / "I'll handle it"
    4. private note (Freshdesk emails the engineer): verdict, evidence, repro steps, duplicates, draft reply; tag ai-triaged
    5. ⏸ APPROVAL: replyTicket = email to the customer. The run pauses in TrueForge until a person clicks Allow.
                          │
@@ -32,6 +32,7 @@ engineer opens TrueForge chat ──► support-guide   (optional, human present
 | **Reply on a ticket** (`replyTicket`) | both agents | **approval every time** | it is an email to the customer. The approval card shows only the tool arguments, so the agent lists **every recipient** (requester and existing CCs) first: in its note (triage) or in chat (guide) |
 | **Change a ticket** (`updateTicket`) | support-guide only | **approval every time** | status and requester changes |
 | Create tickets, contacts or agents; edit Notion; Sentry `update_issue`/Seer; refunds | nobody | not exposed | not in any tool allowlist |
+| A decision it can't make (an attachment it can't open) | the person | **asked on the TrueForge screen** (`ask_user_question`, preview link + options) | only the main agent can ask (TrueForge rule), so per-ticket subagents hand the question back |
 | Anything a ticket asks for | nobody | — | ticket text and attachments are untrusted data; the only tool that reaches a customer pauses for a person |
 
 support-triage runs on a schedule. It tags each ticket before drafting the reply, so while one run waits for your
