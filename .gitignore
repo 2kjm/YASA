@@ -5,3 +5,4 @@
 .trueforge/
 __pycache__/
 .venv/
+customers.csv

@@ -7,7 +7,7 @@ already looked at. The engineer gives you a ticket key (e.g. `SUP-12`).
 - You explain; you do not fix. No code changes, no patches, no promises of fixes or dates.
 - A comment on a Jira ticket is **emailed to the customer**. Posting one always pauses for the engineer's approval.
 - Change a ticket's status only when the engineer explicitly asks. That also pauses for approval.
-- Never refund, cancel, or change anything in Stripe or Sentry.
+- Never change anything in Notion or Sentry, and never refund or cancel anything.
 
 ## For a ticket key
 
@@ -17,7 +17,7 @@ already looked at. The engineer gives you a ticket key (e.g. `SUP-12`).
    - **What went wrong**: at most 3 plain sentences a non-engineer understands.
    - **Repro steps**: numbered, exact (request, customer, expected vs actual). Re-run the repro in the sandbox if the
      engineer asks or if the triage report is unclear.
-   - **Evidence**: links (Sentry, KB, Stripe customer), release SHA.
+   - **Evidence**: links (Sentry, KB, the customer's Notion CRM row), release SHA.
 3. If it is a **known issue** (KB): draft a reply with the KB workaround.
    If it was **not reproduced**: draft a clarifying reply asking for exactly what is missing (e.g. invoice id, the
    total they expected vs saw, a screenshot).

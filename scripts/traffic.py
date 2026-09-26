@@ -3,11 +3,11 @@ Start the app first (see README), then: uv run --env-file .env scripts/traffic.p
 import urllib.error
 import urllib.request
 
-from seed_stripe import CUSTOMERS, email
+from customers import CUSTOMERS, email
 
 BASE = "http://localhost:8765"
 
-for tag, name, invoice in CUSTOMERS:
+for tag, _, _, _, invoice in CUSTOMERS:
     for path in (f"/invoices/{invoice}", f"/invoices/{invoice}/export"):
         req = urllib.request.Request(BASE + path, headers={"x-user-email": email(tag)})
         try:
